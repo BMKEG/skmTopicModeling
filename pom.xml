@@ -1,0 +1,146 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<artifactId>bmkeg-parent</artifactId>
+		<groupId>edu.isi.bmkeg</groupId>
+		<version>0.1.0-SNAPSHOT</version>
+	</parent>
+
+	<groupId>edu.isi.bmkeg</groupId>
+	<artifactId>skmTopicModeling</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<name>SciKnowMine Topic Modeling Workflow Execution</name>
+
+	<build>
+		<pluginManagement>
+			<plugins>
+			<!--
+				We want the test that populates the test DB to run before the rest. 
+			 -->
+				<plugin>
+					<artifactId>maven-surefire-plugin</artifactId>
+					<configuration>
+						<runOrder>alphabetical</runOrder>
+					</configuration>
+				</plugin>
+			</plugins>
+		</pluginManagement>
+		<plugins>
+
+			<!-- NOTE: We don't need a groupId specification because the group is 
+				org.apache.maven.plugins ...which is assumed by default. -->
+			<plugin>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<version>2.6</version>
+				<executions>
+					<execution>
+						<id>copy-vpdmf</id>
+						<goals>
+							<goal>copy</goal>
+						</goals>
+						<configuration>
+							<artifactItems>
+								<artifactItem>
+									<groupId>edu.isi.bmkeg</groupId>
+									<artifactId>digitalLibrary</artifactId>
+									<type>zip</type>
+									<outputDirectory>${project.build.directory}/vpdmf/edu/isi/bmkeg/skm/topicmodeling</outputDirectory>
+									<destFileName>digitalLibrary_VPDMf.zip</destFileName>
+								</artifactItem>
+							</artifactItems>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>build-helper-maven-plugin</artifactId>
+				<version>1.7</version>
+				<executions>
+					<execution>
+						<id>add-resources</id>
+						<configuration>
+							<resources>
+								<resource>
+									<directory>${project.build.directory}/vpdmf</directory>
+								</resource>
+							</resources>
+						</configuration>
+						<goals>
+							<goal>add-resource</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			
+		</plugins>
+	</build>
+
+	<dependencies>
+
+		<dependency>
+			<groupId>edu.isi.bmkeg</groupId>
+			<artifactId>digitalLibrary</artifactId>
+			<version>0.1.2-SNAPSHOT</version>
+			<type>zip</type>
+		</dependency>
+
+		<dependency>
+		  <groupId>edu.isi.bmkeg</groupId>
+		  <artifactId>digitalLibrary-jpa</artifactId>
+		  <version>0.1.2-SNAPSHOT</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.uimafit</groupId>
+			<artifactId>uimafit</artifactId>
+			<version>1.4.0</version>
+		</dependency>
+
+		<dependency>
+			<groupId>edu.isi.bmkeg</groupId>
+			<artifactId>skmCore</artifactId>
+			<version>0.0.2-SNAPSHOT</version>
+			<type>jar</type>
+			<scope>compile</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-core</artifactId>
+			<version>${spring.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-context</artifactId>
+			<version>${spring.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-beans</artifactId>
+			<version>${spring.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-test</artifactId>
+			<version>${spring.version}</version>
+			<type>jar</type>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+		  <groupId>net.sf.jung</groupId>
+		  <artifactId>jung-io</artifactId>
+		  <version>2.0.1</version>
+		</dependency>
+
+		<dependency>
+		  <groupId>net.sf.jung</groupId>
+		  <artifactId>jung-graph-impl</artifactId>
+		  <version>2.0.1</version>
+		</dependency>
+
+	</dependencies>
+
+</project>

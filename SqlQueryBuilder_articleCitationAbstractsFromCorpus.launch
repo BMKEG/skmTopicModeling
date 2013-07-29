@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<launchConfiguration type="org.eclipse.jdt.launching.localJavaApplication">
+<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_PATHS">
+<listEntry value="/vpdmfDao/src/main/java/edu/isi/bmkeg/vpdmf/bin/SqlQueryBuilder.java"/>
+</listAttribute>
+<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_TYPES">
+<listEntry value="1"/>
+</listAttribute>
+<stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="edu.isi.bmkeg.vpdmf.bin.SqlQueryBuilder"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="${resource_loc:/skmTopicModeling/src/main/resources/edu/isi/bmkeg/skm/topicmodeling/vpdmf/digitalLibrary_VPDMf.zip}&#10;ArticleCitation&#10;]LiteratureCitation|LiteratureCitation.vpdmfId&amp;]LiteratureCitation|ArticleCitation.pmid&amp;]LiteratureCitation|LiteratureCitation.abstractText&#10;]Corpus|Corpus.name=mycorpusName"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="vpdmfDao"/>
+</launchConfiguration>
