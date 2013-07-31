@@ -68,12 +68,7 @@ public class RetrieveCitationsData {
 		}
 		
 		pWriter.println("vpdmfId\tpmid\tvpdmfLabel\turl");
-
-//		CoreDao coreDao = new CoreDaoImpl();
-//		coreDao.init(login, password, dbName);
-//
-//		coreDao.getCe().connectToDB();
-		
+	
 		// TODO use VPDMf to connect to DB instead of connecting to DB directly
 		Class.forName("com.mysql.jdbc.Driver").newInstance();
 

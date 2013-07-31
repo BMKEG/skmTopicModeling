@@ -2,7 +2,6 @@ package edu.isi.bmkeg.skm.topicmodeling.cleartk.cr;
 
 import java.io.IOException;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 
 import org.apache.log4j.Logger;
 import org.apache.uima.UimaContext;
@@ -168,13 +167,7 @@ public class CitationAbstractCollectionReader extends JCasCollectionReader_ImplB
 	public boolean hasNext() throws IOException, CollectionException {
 
 		return ! eof;
-//		try {
-//			
-//			return ! this.rs.isAfterLast();
-//		} catch (SQLException e) {
-//			throw new IOException(e);
-//		}
-
+		
 	}
 
 	public void close() throws IOException {

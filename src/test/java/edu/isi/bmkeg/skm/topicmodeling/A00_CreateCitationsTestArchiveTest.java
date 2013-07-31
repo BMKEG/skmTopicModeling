@@ -49,16 +49,6 @@ public class A00_CreateCitationsTestArchiveTest {
 		
 		File outputFile = new File("target/testCorpus-mysql.zip");
 		
-//		URL corpusDump = ctx.getResource(
-//				"classpath:edu/isi/bmkeg/skm/topicmodeling/corpusDump.xml").getURL();
-//
-//		CitationsAndDocumentsLoader loader = new CitationsAndDocumentsLoader();
-//		
-//		loader.setCitationsDao(cdao);
-//		
-//		loader.loadCitationsAndDocuments(corpusDump, "testCorpus", "Corpus used for Tests");
-	
-		
 		BuildDBBean ctxBuilder = (BuildDBBean) ctx.getBean("dlVpdmfBuilder");
 		
 		String dbName = ctxBuilder.getUri();
