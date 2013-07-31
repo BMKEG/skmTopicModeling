@@ -8,8 +8,10 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.URI;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -177,9 +179,9 @@ public class Tokens2MalletInstanceFeatureConsumer extends JCasAnnotator_ImplBase
 	      return stopwords;
 	    }
 
-	    File in = new File(stopwordsUri);
 	    BufferedReader reader = null;
-	    reader = new BufferedReader(new FileReader(in));
+	    URL url = stopwordsUri.toURL();
+	    reader = new BufferedReader(new InputStreamReader(url.openStream()));
 
 	    String line;
 	    while ((line = reader.readLine()) != null) {
