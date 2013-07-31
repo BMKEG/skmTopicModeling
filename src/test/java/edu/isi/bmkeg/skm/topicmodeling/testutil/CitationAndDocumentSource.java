@@ -15,7 +15,7 @@ import edu.isi.bmkeg.digitalLibrary.model.citations.ArticleCitation;
 import edu.isi.bmkeg.digitalLibrary.model.citations.Journal;
 import edu.isi.bmkeg.digitalLibrary.model.citations.Author;
 import edu.isi.bmkeg.ftd.model.FTD;
-import edu.isi.bmkeg.ftd.model.FTDSection;
+//import edu.isi.bmkeg.ftd.model.FTDSection;
 
 /*
  * XML Structure:
@@ -191,7 +191,7 @@ public class CitationAndDocumentSource {
 		
 		FTD d = new FTD();
 		
-		d.setSections(new ArrayList<FTDSection>());
+//		d.setSections(new ArrayList<FTDSection>());
 
 		// Reads Sections
 		readStartElem("Sections");
@@ -203,23 +203,23 @@ public class CitationAndDocumentSource {
 
 			StartElement startElem = nextEvent.asStartElement();
 			
-			FTDSection s = new FTDSection();
-						
-			int startSpan = 0;
-			int endSpan = 0;
-			String attrValue;
-			if ((attrValue = readAttrValue(startElem,"name")) != null)
-				s.setSectionType(attrValue);
-			if ((attrValue = readAttrValue(startElem,"spanStart")) != null)
-				startSpan =  Integer.parseInt(attrValue);
-			if ((attrValue = readAttrValue(startElem,"spanEnd")) != null)
-				endSpan = Integer.parseInt(attrValue);
-
-			sectionSpans.add(new int[] {startSpan, endSpan});
+//			FTDSection s = new FTDSection();
+//						
+//			int startSpan = 0;
+//			int endSpan = 0;
+//			String attrValue;
+//			if ((attrValue = readAttrValue(startElem,"name")) != null)
+//				s.setSectionType(attrValue);
+//			if ((attrValue = readAttrValue(startElem,"spanStart")) != null)
+//				startSpan =  Integer.parseInt(attrValue);
+//			if ((attrValue = readAttrValue(startElem,"spanEnd")) != null)
+//				endSpan = Integer.parseInt(attrValue);
+//
+//			sectionSpans.add(new int[] {startSpan, endSpan});
 			
 			readEndElem();	// reads </Section>			
 			
-			d.getSections().add(s);
+//			d.getSections().add(s);
 			
 			readNextTag();
 		}
@@ -231,14 +231,14 @@ public class CitationAndDocumentSource {
 
 		//		readEndElem();	// </ArticleText>
 
-		for (int i = 0; i < d.getSections().size(); i++) {
-			FTDSection s = d.getSections().get(i);
-			int[] span = sectionSpans.get(i);
-			int sStart = span[0];
-			int sEnd = span[1]; 
-			if (sEnd >= text.length()) sEnd = text.length() - 1;
-			s.setText(text.substring(sStart,sEnd));
-		}
+//		for (int i = 0; i < d.getSections().size(); i++) {
+//			FTDSection s = d.getSections().get(i);
+//			int[] span = sectionSpans.get(i);
+//			int sStart = span[0];
+//			int sEnd = span[1]; 
+//			if (sEnd >= text.length()) sEnd = text.length() - 1;
+//			s.setText(text.substring(sStart,sEnd));
+//		}
 
 		readEndElem();	// </Document>
 		

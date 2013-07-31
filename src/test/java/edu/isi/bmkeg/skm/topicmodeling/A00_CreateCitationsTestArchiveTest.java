@@ -12,9 +12,11 @@ import org.springframework.test.annotation.DirtiesContext.ClassMode;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import edu.isi.bmkeg.digitalLibrary.bin.AddArticleCitations;
+import edu.isi.bmkeg.digitalLibrary.bin.AddArticleCitationsToCorpus;
+import edu.isi.bmkeg.digitalLibrary.bin.EditArticleCorpus;
 import edu.isi.bmkeg.digitalLibrary.dao.vpdmf.BuildDBBean;
 import edu.isi.bmkeg.digitalLibrary.dao.vpdmf.VpdmfCitationsDao;
-import edu.isi.bmkeg.skm.topicmodeling.testutil.CitationsAndDocumentsLoader;
 import edu.isi.bmkeg.vpdmf.controller.VPDMfKnowledgeBaseBuilder;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -45,23 +47,48 @@ public class A00_CreateCitationsTestArchiveTest {
 	@Test
 	public void createTestCitationsArchiveTest() throws Exception {
 		
-		File outputFile = new File("target/testCorpus_VPDMf.zip");
+		File outputFile = new File("target/testCorpus-mysql.zip");
 		
-		URL corpusDump = ctx.getResource(
-				"classpath:edu/isi/bmkeg/skm/topicmodeling/corpusDump.xml").getURL();
-
-		CitationsAndDocumentsLoader loader = new CitationsAndDocumentsLoader();
-		
-		loader.setCitationsDao(cdao);
-		
-		loader.loadCitationsAndDocuments(corpusDump, "testCorpus", "Corpus used for Tests");
+//		URL corpusDump = ctx.getResource(
+//				"classpath:edu/isi/bmkeg/skm/topicmodeling/corpusDump.xml").getURL();
+//
+//		CitationsAndDocumentsLoader loader = new CitationsAndDocumentsLoader();
+//		
+//		loader.setCitationsDao(cdao);
+//		
+//		loader.loadCitationsAndDocuments(corpusDump, "testCorpus", "Corpus used for Tests");
 	
+		
 		BuildDBBean ctxBuilder = (BuildDBBean) ctx.getBean("dlVpdmfBuilder");
-
+		
 		String dbName = ctxBuilder.getUri();
 		String login = ctxBuilder.getLogin();
 		String password = ctxBuilder.getPassword();
 		File inFile = ctxBuilder.getVpdmfArchivePath().getFile();
+
+		File pmidFile = ctx.getResource(
+				"classpath:edu/isi/bmkeg/skm/topicmodeling/pmids.txt").getFile();;
+		
+		String[] args = new String[] { 
+				"-name", "testCorpus", "-desc", "Corpus used for Tests", "-owner", "tester", 
+				"-regex", "_(.*A.*)\\.pdf",				
+				"-db", dbName, "-l", login, "-p", password
+				};
+
+		EditArticleCorpus.main(args);
+
+		args = new String[] { 
+				pmidFile.getPath(), dbName, login, password
+				};
+
+		AddArticleCitations.main(args);		
+		
+		args = new String[] { 
+				pmidFile.getPath(), "testCorpus", dbName, login, password
+				};
+
+		AddArticleCitationsToCorpus.main(args);
+		
 		
 		VPDMfKnowledgeBaseBuilder archBuilder = new VPDMfKnowledgeBaseBuilder(
 				inFile, login, password, dbName);

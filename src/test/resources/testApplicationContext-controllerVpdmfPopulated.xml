@@ -29,6 +29,6 @@
 		p:uri="#{bmkegProperties.dbUrl}" 
 		p:login="#{bmkegProperties.dbUser}" 
 		p:password="#{bmkegProperties.dbPassword}"
-		p:vpdmfArchivePath="file:target/testCorpus_VPDMf.zip"/>
+		p:vpdmfArchivePath="file:target/testCorpus-mysql.zip"/>
 		
 </beans>

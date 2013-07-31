@@ -2,3 +2,5 @@
 /target
 /.classpath
 /.project
+/general.drl
+/journalAbbrLookup.jObj

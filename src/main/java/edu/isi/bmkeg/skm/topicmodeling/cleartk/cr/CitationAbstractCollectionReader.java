@@ -65,6 +65,8 @@ public class CitationAbstractCollectionReader extends JCasCollectionReader_ImplB
 	
 	protected ResultSet rs;
 
+	private boolean eof = false;
+
 	public static CollectionReader getCollectionReader(
 			String corpusName,
 			String login,
@@ -118,8 +120,7 @@ public class CitationAbstractCollectionReader extends JCasCollectionReader_ImplB
 			
 			this.rs = citationsDao.getCoreDao().getCe().executeRawSqlQuery(sql);
 
-			// Caches the first row so we can call rs.isAfterLast() to compute the result of hasNext()
-			this.rs.next();
+			eof = ! this.rs.next();
 			
 		} catch (Exception e) {
 
@@ -154,7 +155,7 @@ public class CitationAbstractCollectionReader extends JCasCollectionReader_ImplB
 		    }
 		    
 		    // Caches the next row
-			this.rs.next();
+			eof = ! this.rs.next();
 
 		} catch (Exception e) {
 
@@ -166,11 +167,13 @@ public class CitationAbstractCollectionReader extends JCasCollectionReader_ImplB
 
 	public boolean hasNext() throws IOException, CollectionException {
 
-		try {
-			return ! this.rs.isAfterLast();
-		} catch (SQLException e) {
-			throw new IOException(e);
-		}
+		return ! eof;
+//		try {
+//			
+//			return ! this.rs.isAfterLast();
+//		} catch (SQLException e) {
+//			throw new IOException(e);
+//		}
 
 	}
 
