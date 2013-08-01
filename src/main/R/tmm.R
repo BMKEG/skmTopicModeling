@@ -56,13 +56,21 @@ plotTMM.file <- function (similarityGraph, idsFile, dtvFile, edgecut = 0.8,
 	tv <- read.topicVectors(idsFile, dtvFile)
 	
 	cat(date(), ': computing DrL layout from similarity graph ...\n')
-	l <- layout.drl(g, options=list(edge.cut= edgecut))
-	
-	# Adding dimnames to layout
- 	dimnames(l) <- list(documents=V(g)$name, coord=c('x','y'))
-	
+	l <- computeLayout(g, edgecut)
+	cat(date(), 'Done computing DrL layout\n')
+
 	plotTMM(l, tv, cntClusters, ... )
 
+}
+
+computeLayout <- function(g, edgecut) {
+	# computing DrL layout from similarity graph
+	l <- layout.drl(g, options=list(edge.cut= edgecut))
+
+	# Adding dimnames to layout
+ 	dimnames(l) <- list(documents=V(g)$name, coord=c('x','y'))
+
+	return(l)
 }
 
 # Selects the top topic (i.e., the topic with highest proportion) of each topic vector
@@ -297,18 +305,16 @@ sqrProd <- function(x) {
  	return (rowSums(x*x))
 }
 
-write.layout <- function(l,g,file) {
-	write.table(cbind(V(g)$name,l),file)
+write.layout <- function(l,file) {
+	write.table(l,file)
 }
 
-write.clusters <- function(c,g,clusterfile, centersfile) {
-	write.table(cbind(V(g)$name,c$cluster),clusterfile)
+write.clusters <- function(c,clusterfile, centersfile) {
+	write.table(c$cluster,clusterfile)
 	write.table(c$centers,centersfile)
 }
 
 euclidDist <- function(x1,y1,x2,y2) {
 	sqrt((x1-x2)^2 + (y1-y2)^2)
 }
-
-#
 
