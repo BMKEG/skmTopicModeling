@@ -1,0 +1,8 @@
+cluster	diagTopic	words
+1	21	glutamate nmda acid receptor release microm receptors gaba uptake amino effect ca2+ + mm effects calcium 3h - glycine 
+2	267	ischemia cerebral brain ischemic injury rats group min damage neuronal % days significantly occlusion study ca1 reperfusion treatment animals 
+3	251	ischemia cerebral brain ischemic rats min injury damage % neuronal occlusion days group significantly treatment animals model study reperfusion 
+4	223	receptor microm gaba effect glutamate release nmda receptors acid effects adenosine inhibition camp activation antagonist inhibitor rat results induced 
+5	34	stress rats levels crf corticosterone mrna acth increased response cocaine plasma effects animals crh expression exposure acute increase restraint 
+6	68	neurons current currents channels microm ca2+ cells channel potential ca membrane effect action effects 2+ mm calcium receptor gaba 
+7	47	binding 3h receptors sites brain receptor cortex rat distribution density regions specific high affinity autoradiography % 125i human areas 
