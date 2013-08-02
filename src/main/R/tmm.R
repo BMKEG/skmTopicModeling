@@ -28,6 +28,26 @@ read.topicVectors <- function(idsFile, dtvFile) {
 		dimnames = list(documents=ids,topics=1:n))
 }
 
+read.topicWords <- function(file) {
+	t <- read.table(file,sep="\t",stringsAsFactors=FALSE,quote="")	
+	
+	tw <- t$V3
+	names(tw) <- 1:length(tw)
+	
+	return(tw)
+}
+
+write.diagTopics <- function(topicWords, diagTopics,file) {
+	t <- list(cluster=1:length(diagTopics),diagTopic=diagTopics,words=topicWords[diagTopics])
+	write.table(t,file,quote=FALSE,sep='\t',row.name=FALSE,col.name=TRUE)
+}
+
+# c2c is a matrix as returned by the function closestToCenter
+write.closestNodes <- function(c2c, file) {
+  t <- list(cluster=1:nrow(c2c),docs=c2c)
+  write.table(t,file,quote=FALSE,sep='\t',row.name=FALSE,col.name=TRUE)
+}
+
 # MAIN FUNCTION
 # Arguments:
 #   similarityGraphFile: a pairwise document similarity graphml file
@@ -139,6 +159,23 @@ singleClusterDistToCenter <- function(k,l,cl) {
 	euclidDist(l[i,1],l[i,2],cl$centers[k,1],cl$centers[k,2])
 }
 
+# Finds the n closest nodes to the center of each cluster
+# Arguments:
+#     n: Number of nodes per cluster in result
+#     l: nodes layout (as returned by the layout.drl() function)
+#     cl: clusters over l computed using kmeans
+# Value:
+#     A matrix with n columns and one row per cluster containing the names of
+#     the closest nodes to the center of each cluster
+closestToCenter <- function(n, l, cl) {
+  d2c <- distToCenter(l,cl)
+  
+  docs <- sapply(1:nrow(cl$centers), 
+                function(k) {
+                  names(sort(d2c[which(cl$cluster == k)])[1:n])
+                })
+  return(t(docs))
+}
 
 plotTMM <- function (l, tv, cntClusters, ... ) {
 	
