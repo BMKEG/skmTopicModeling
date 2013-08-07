@@ -94,4 +94,99 @@ public class CitationAbstractCollectionReaderTest {
 		Assert.assertEquals(test_corpus_no_doc_cnt, noDocCnt);				
 
 	}
+
+	@Test
+	public void testCitationsAbstractCollectionReaderInsertingTitles() throws Exception {
+		
+		CollectionReader cr = CitationAbstractCollectionReader.getCollectionReader(
+				test_corpus_name,
+				false,
+				true,
+				prop.getDbUser(),
+				prop.getDbPassword(),
+				prop.getDbUrl());
+
+		int i = 0;
+		int noDocCnt = 0;
+		
+		final CAS cas = CasCreationUtils.createCas(asList(cr.getMetaData()));
+		
+		try {
+			// Process
+			while (cr.hasNext()) {
+				cr.getNext(cas);
+				
+				String doc = cas.getDocumentText();
+				
+				if (doc == null || doc.length() == 0)
+					noDocCnt++;
+
+				ArticleCitation cit = (ArticleCitation) CasUtil.selectSingle(cas, CasUtil.getType(cas, ArticleCitation.class));
+				Assert.assertNotNull(cit);
+				Assert.assertTrue(cit.getVpdmfId() > 0);
+				Assert.assertTrue(cit.getPmid() > 0);
+				
+				i++;	
+								
+				cas.reset();
+			}
+			
+		}
+		finally {
+			// Destroy
+			cr.destroy();
+		}
+		
+		Assert.assertEquals(test_corpus_cnt, i);				
+		Assert.assertEquals(0, noDocCnt);				
+
+	}
+
+	@Test
+	public void testCitationsAbstractCollectionReaderSkippingNullAbstracts() throws Exception {
+		
+		CollectionReader cr = CitationAbstractCollectionReader.getCollectionReader(
+				test_corpus_name,
+				true,
+				false,
+				prop.getDbUser(),
+				prop.getDbPassword(),
+				prop.getDbUrl());
+
+		int i = 0;
+		int noDocCnt = 0;
+		
+		final CAS cas = CasCreationUtils.createCas(asList(cr.getMetaData()));
+		
+		try {
+			// Process
+			while (cr.hasNext()) {
+				cr.getNext(cas);
+				
+				String doc = cas.getDocumentText();
+				
+				if (doc == null || doc.length() == 0)
+					noDocCnt++;
+
+				ArticleCitation cit = (ArticleCitation) CasUtil.selectSingle(cas, CasUtil.getType(cas, ArticleCitation.class));
+				Assert.assertNotNull(cit);
+				Assert.assertTrue(cit.getVpdmfId() > 0);
+				Assert.assertTrue(cit.getPmid() > 0);
+				
+				i++;	
+								
+				cas.reset();
+			}
+			
+		}
+		finally {
+			// Destroy
+			cr.destroy();
+		}
+		
+		Assert.assertEquals(test_corpus_cnt - test_corpus_no_doc_cnt, i);				
+		Assert.assertEquals(0, noDocCnt);				
+
+	}
+	
 }
