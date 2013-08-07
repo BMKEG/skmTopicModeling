@@ -32,8 +32,20 @@ public class PreprocessCorpusAbstractsForMallet {
 		@Option(name = "-db", usage = "Database name", required = true)
 		public String dbName = "";
 
+		@Option(name = "-insertTitles", usage = "Insert titles", required = false)
+		public boolean insertTitles = false;
+
 		@Option(name = "-keepstopwords", usage = "Keep stopwords", required = false)
 		public boolean removeStopwords = false;
+
+		@Option(name = "-removeNumbers", usage = "Remove Numbers", required = false)
+		public boolean removeNumbers = false;
+
+		@Option(name = "-removeSingleLetters", usage = "Remove single letter words", required = false)
+		public boolean removeSingeLetters = false;
+
+		@Option(name = "-additionalDelimiters", usage = "Additional token delimiters regexp", required = false, metaVar = "REGEX")
+		public String additionalDelimiters = null;
 
 		@Option(name = "-ids", usage = "Output Ids mapping file name", required = false)
 		public File idsMappingFile = null;
@@ -45,7 +57,11 @@ public class PreprocessCorpusAbstractsForMallet {
 			String login,
 			String password,
 			String dbName,
+			boolean insertTitles,
 			boolean keepStopwords,
+			boolean removeNumbers,
+			boolean removeSingleLetters,
+			String additionalDelimiters,
 			File idsMappingFile
 			) throws Exception {
 		
@@ -60,6 +76,8 @@ public class PreprocessCorpusAbstractsForMallet {
 		
 		CollectionReader reader = CitationAbstractCollectionReader.getCollectionReader(
 				corpusName, 
+				true,
+				insertTitles,
 				login, 
 				password, 
 				dbName
@@ -71,7 +89,11 @@ public class PreprocessCorpusAbstractsForMallet {
 	    builder.add(TokenAnnotator.getDescription()); // Tokenization
 	    builder.add(Tokens2MalletInstanceFeatureConsumer.getDescription(outputFile,
 	    		idsMappingFile,
-	    		true,stopwordsUri));
+	    		true,
+	    		removeNumbers,
+	    		removeSingleLetters,
+	    		additionalDelimiters,
+	    		stopwordsUri));
 	    
 	    // ///////////////////////////////////////////
 	    // Run pipeline to create training data file
@@ -101,7 +123,11 @@ public class PreprocessCorpusAbstractsForMallet {
 		
 		execute(options.corpus, options.outputFile, options.login, 
 				options.password, options.dbName,
+				options.insertTitles,
 				options.removeStopwords,
+				options.removeNumbers,
+				options.removeSingeLetters,
+				options.additionalDelimiters,
 				options.idsMappingFile);
 
 		long endTime = System.currentTimeMillis();

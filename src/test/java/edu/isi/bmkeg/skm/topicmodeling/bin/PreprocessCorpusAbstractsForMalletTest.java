@@ -38,10 +38,24 @@ public class PreprocessCorpusAbstractsForMalletTest {
 	
 	@Autowired
 	private BmkegProperties prop;
+	
+	File outputFile;
 
 	@Before
 	public void setUp() throws Exception {
 		
+		String outputFn = "target/test.dat";
+		
+		outputFile = new File(outputFn);
+		
+		System.out.println("Output file: " + outputFile.getAbsolutePath());
+		if (outputFile.exists()) {
+			
+			System.out.println("Output file already exists - deleting it");
+			outputFile.delete();
+			
+		}
+
 	}
 
 	@After
@@ -52,19 +66,8 @@ public class PreprocessCorpusAbstractsForMalletTest {
 	@Test
 	public void testNoStopwords() throws Exception {
 		
-		String outputFn = "target/test.dat";
 		String idsMappingFn = "target/idsMapping.txt";
 		
-		File file = new File(outputFn);
-		
-		System.out.println("Output file: " + file.getAbsolutePath());
-		if (file.exists()) {
-			
-			System.out.println("Output file already exists - deleting it");
-			file.delete();
-			
-		}
-
 		File idsMappinfFile = new File(idsMappingFn);
 		
 		System.out.println("Output idsMapping file: " + idsMappinfFile.getAbsolutePath());
@@ -77,7 +80,7 @@ public class PreprocessCorpusAbstractsForMalletTest {
 
 		String[] args = new String[] { 
 				"-corpus", test_corpus_name, 
-				"-f", outputFn, 
+				"-f", outputFile.getAbsolutePath(), 
 				"-l", prop.getDbUser(), 
 				"-p", prop.getDbPassword(), 
 				"-db", prop.getDbUrl(),
@@ -86,9 +89,9 @@ public class PreprocessCorpusAbstractsForMalletTest {
 
 		PreprocessCorpusAbstractsForMallet.main(args);
 
-		Assert.assertTrue(file.exists());
+		Assert.assertTrue(outputFile.exists());
 		
-		InstanceList instances = InstanceList.load (file);
+		InstanceList instances = InstanceList.load (outputFile);
 		
 		Assert.assertEquals(test_corpus_cnt, instances.size());
 		
@@ -133,22 +136,10 @@ public class PreprocessCorpusAbstractsForMalletTest {
 
 	@Test
 	public void testWithStopwords() throws Exception {
-		
-		String outputFn = "target/test.dat";
-		
-		File file = new File(outputFn);
-		
-		System.out.println("Output file: " + file.getAbsolutePath());
-		if (file.exists()) {
-			
-			System.out.println("Output file already exists - deleting it");
-			file.delete();
-			
-		}
 
 		String[] args = new String[] { 
 				"-corpus", test_corpus_name, 
-				"-f", outputFn, 
+				"-f", outputFile.getAbsolutePath(), 
 				"-l", prop.getDbUser(), 
 				"-p", prop.getDbPassword(), 
 				"-db", prop.getDbUrl(),
@@ -157,9 +148,48 @@ public class PreprocessCorpusAbstractsForMalletTest {
 
 		PreprocessCorpusAbstractsForMallet.main(args);
 
-		Assert.assertTrue(file.exists());
+		Assert.assertTrue(outputFile.exists());
 		
-		InstanceList instances = InstanceList.load (file);
+		InstanceList instances = InstanceList.load (outputFile);
+		
+		Assert.assertEquals(test_corpus_cnt, instances.size());
+		
+		for (Instance inst : instances) {
+
+			FeatureSequence features = (FeatureSequence) inst.getData();
+			
+			Assert.assertNotNull(features);
+			
+			System.out.print(inst.getName() + ":");
+			for (int i = 0; i < features.size(); i++) {
+				System.out.print(" " + features.getObjectAtPosition(i));
+			}
+			System.out.println();
+			
+		}
+		
+	}
+
+	@Test
+	public void testExludingNumbersAndSingleLettersWithAdditionalDelimiters() throws Exception {
+
+		String[] args = new String[] { 
+				"-corpus", test_corpus_name, 
+				"-f", outputFile.getAbsolutePath(), 
+				"-l", prop.getDbUser(), 
+				"-p", prop.getDbPassword(), 
+				"-db", prop.getDbUrl(),
+				"-removeNumbers",
+				"-removeSingleLetters",
+				"-insertTitles",
+				"-additionalDelimiters", "[-/=]"
+				};
+
+		PreprocessCorpusAbstractsForMallet.main(args);
+
+		Assert.assertTrue(outputFile.exists());
+		
+		InstanceList instances = InstanceList.load (outputFile);
 		
 		Assert.assertEquals(test_corpus_cnt, instances.size());
 		

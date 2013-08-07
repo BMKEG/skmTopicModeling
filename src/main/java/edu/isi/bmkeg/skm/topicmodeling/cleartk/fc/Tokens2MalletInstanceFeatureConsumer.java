@@ -54,10 +54,24 @@ public class Tokens2MalletInstanceFeatureConsumer extends JCasAnnotator_ImplBase
 	@ConfigurationParameter(mandatory = false, description = "To Lower Case?")
 	protected boolean toLowerCase = true;
 
+	public final static String PARAM_EXCLUDE_NUMBER_TOKENS = ConfigurationParameterFactory
+			.createConfigurationParameterName( Tokens2MalletInstanceFeatureConsumer.class, "excludeNumberTokens" );
+	@ConfigurationParameter(mandatory = false, description = "Exclude tokens starting with a number?")
+	protected boolean excludeNumberTokens = true;
+
+	public final static String PARAM_EXCLUDE_SINGLE_LETTERS_TOKENS = ConfigurationParameterFactory
+			.createConfigurationParameterName( Tokens2MalletInstanceFeatureConsumer.class, "excludeSingleLetterTokens" );
+	@ConfigurationParameter(mandatory = false, description = "Exclude Single Letter Tokens?")
+	protected boolean excludeSingleLetterTokens = true;
+
+	public final static String PARAM_ADDITIONAL_TOKEN_DELIMITERS = ConfigurationParameterFactory
+			.createConfigurationParameterName( Tokens2MalletInstanceFeatureConsumer.class, "additionalTokenDelimiters" );
+	@ConfigurationParameter(mandatory = false, description = "Regexp containing additional characters to be used as token delimiters (e.g., '-')")
+	protected String additionalTokenDelimiters = null;
+
 	public static final String PARAM_STOPWORDS_URI = ConfigurationParameterFactory.createConfigurationParameterName(
 			Tokens2MalletInstanceFeatureConsumer.class,
 		    "stopwordsUri");
-
 	@ConfigurationParameter(
 			mandatory = false,
 		    description = "provides a URI pointing to a file containing a whitespace separated list of stopwords (e.g., file:edu/isi/bmkeg/skm/topicmodeling/stopwords.txt")
@@ -88,6 +102,25 @@ public class Tokens2MalletInstanceFeatureConsumer extends JCasAnnotator_ImplBase
 	    		PARAM_MALLET_INPUT_INSTANCE_FILE,malletInputInstanceFile,
 	    		PARAM_IDS_MAPPING_FILE,idsMappingFile,
 	    		PARAM_TO_LOWERCASE,toLowerCase,
+	    		PARAM_STOPWORDS_URI, stopwordsUri);
+	  }
+
+	public static AnalysisEngineDescription getDescription(File malletInputInstanceFile,
+			File idsMappingFile,
+			boolean toLowerCase, 
+			boolean removeNumbers,
+			boolean removeSingleLetters,
+			String additionalDelimiters,
+			URI stopwordsUri) throws ResourceInitializationException {
+
+	    return AnalysisEngineFactory.createPrimitiveDescription(
+	    		Tokens2MalletInstanceFeatureConsumer.class,
+	    		PARAM_MALLET_INPUT_INSTANCE_FILE,malletInputInstanceFile,
+	    		PARAM_IDS_MAPPING_FILE,idsMappingFile,
+	    		PARAM_TO_LOWERCASE,toLowerCase,
+	    		PARAM_EXCLUDE_NUMBER_TOKENS, removeNumbers,
+	    		PARAM_EXCLUDE_SINGLE_LETTERS_TOKENS, removeSingleLetters,
+	    		PARAM_ADDITIONAL_TOKEN_DELIMITERS, additionalDelimiters,
 	    		PARAM_STOPWORDS_URI, stopwordsUri);
 	  }
 
@@ -138,14 +171,36 @@ public class Tokens2MalletInstanceFeatureConsumer extends JCasAnnotator_ImplBase
 				
 				for (Token t : tokens) {
 					
-					String text = t.getCoveredText();
+					String tokenText = t.getCoveredText();
 					
-					if (toLowerCase)
-						text = text.toLowerCase();
+					String[] subTokens;
 					
-					if (!stopwords.contains(text))
-						malletTokens.add(text);
+					if (additionalTokenDelimiters != null)
+						subTokens = tokenText.split(additionalTokenDelimiters);
+					else
+						subTokens = new String[] { tokenText };
+					
+					for (String text : subTokens) {
+						
+						if (text.length() == 0)
+							continue;
+						
+						if (toLowerCase)
+							text = text.toLowerCase();
+						
+						if (excludeNumberTokens && Character.isDigit(text.charAt(0)))
+							continue;
 
+						if (excludeSingleLetterTokens && text.length() == 1)
+							continue;
+
+						if (stopwords.contains(text))
+							continue;
+
+						malletTokens.add(text);
+						
+					}
+					
 				}
 				
 			}
