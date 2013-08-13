@@ -84,6 +84,8 @@ plotTMM.file <- function (similarityGraph, idsFile, dtvFile, edgecut = 0.8,
 }
 
 computeLayout <- function(g, edgecut) {
+  require('igraph')
+  
 	# computing DrL layout from similarity graph
 	l <- layout.drl(g, options=list(edge.cut= edgecut))
 
