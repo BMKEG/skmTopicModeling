@@ -312,19 +312,6 @@ docSimilaritiesKl <- function(tv, eps = 10^-4, threshold = 0.1, quadSize = 5000L
 }
 
 # Computes a symetric KL similarity between two probability distributions.
-KLsim2 <- function (x,y,logx=log(x),logy=log(y),  eps = 10^-4) {
-
-  ok <- (x > eps) & (y > eps)
-  if (any(ok)) {
-    kl1 <-  sum(x * (logx - logy))
-    kl2 <-  sum(y * (logy - logx))
-    return(0 - (kl1 + kl2)/2)    
-  } else {
-    return(0)
-  }
-}
-
-# Computes a symetric KL similarity between two probability distributions.
 KLsim3 <- function (x,y,logx=log(x),logy=log(y),  eps = 10^-4) {
   
   ok <- (x > eps) & (y > eps)
@@ -335,38 +322,6 @@ KLsim3 <- function (x,y,logx=log(x),logy=log(y),  eps = 10^-4) {
   } else {
     return(0)
   }
-}
-
-myKLsimM <- function(tv, tvlogs = log(tv),  eps = 10^-4, sourceFrom = 1L, targetFrom = 1L, max = 5000) {
-  
-  sourceTo <- min(sourceFrom + max - 1, nrow(tv))
-  targetTo <- min(targetFrom + max - 1, nrow(tv))
-  
-  x <- tv[sourceFrom:sourceTo,]
-  xlogs <- tvlogs[sourceFrom:sourceTo,]
-  
-  if (sourceFrom == sourceTo) {
-    x <- rbind(x)
-    xlogs <- rbind(xlogs)
-  }
-  
-  y <- tv[targetFrom:targetTo,]
-  ylogs <- tvlogs[targetFrom:targetTo,]
-  
-  if (targetFrom == targetTo) {
-    y <- rbind(y)
-    ylogs <- rbind(ylogs)
-  }
-  
-  xlogy <- tcrossprod(x, ylogs)
-  xlogx <- rowSums(x * xlogs)
-  negKlxy <- sweep(xlogy,MARGIN=1,STATS=xlogx)
-    
-  ylogx <- tcrossprod(y, xlogs)
-  ylogy <- rowSums(y * ylogs)
-  negKlyx <- sweep(ylogx,MARGIN=1,STATS=ylogy)
-  
-  return((negKlxy + t(negKlyx))/2)  
 }
 
 myKLsimM4 <- function(tv, tvlogs = log(tv),  eps = 10^-4, sourceFrom = 1L, targetFrom = 1L, max = 5000) {
@@ -401,21 +356,6 @@ myKLsimM4 <- function(tv, tvlogs = log(tv),  eps = 10^-4, sourceFrom = 1L, targe
   return(((negKlxy + t(negKlyx)) ^-1)* (-2))
 }
 
-myKLsimM2 <- function(tv, tvlogs=log(tv),  eps = 10^-4, sourceFrom = 1L, targetFrom = 1L, max = 5000) {
-  
-  sourceTo <- min(sourceFrom + max - 1, nrow(tv))
-  targetTo <- min(targetFrom + max - 1, nrow(tv))
-  
-  # Computes KL distances between given tv rows
-  
-  sapply(X=targetFrom:targetTo,
-        FUN=function(i){
-          sapply(X=sourceFrom:sourceTo,
-                FUN=function(j){KLsim2(x=tv[i,],y=tv[j,],logx=tvlogs[i,],logy=tvlogs[j,],eps=eps)})
-        })
-  
-}
-
 myKLsimM3 <- function(tv, tvlogs=log(tv),  eps = 10^-4, sourceFrom = 1L, targetFrom = 1L, max = 5000) {
   
   sourceTo <- min(sourceFrom + max - 1, nrow(tv))
@@ -437,7 +377,7 @@ findQuadEdgesKl <- function(tv, tvlogs = log(tv),  eps = 10^-4, sourceFrom = 1L,
   
   # Computes cosine distances of given tv rows
   # 	tvcos <- myCosineM(tv, sourceFrom = sourceFrom, targetFrom = targetFrom, max = max)
-  tvcos <- myKLsimM3(tv, tvlogs, eps, sourceFrom = sourceFrom, targetFrom = targetFrom, max = max)
+  tvcos <- myKLsimM4(tv, tvlogs, eps, sourceFrom = sourceFrom, targetFrom = targetFrom, max = max)
   
   # Extracts indices and values for distances grater or equal than threshold
   thrIdx <- which(tvcos >= threshold)
@@ -537,7 +477,7 @@ KLsim <- function (m, ...) {
   if (ncol(m) != 2) stop("m has to be a matrix with two columns, one per distribution")
   
   kds <- KLdiv(m,...)
-  return(0 - (kds[1,2] + kds[2,1])/2)
+  return(2/(kds[1,2] + kds[2,1]))
 }
 
 combineEdges <- function(x) {
