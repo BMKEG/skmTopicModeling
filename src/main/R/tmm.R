@@ -1,3 +1,6 @@
+require("igraph")
+require('flexmix')
+
 # Reads topic model vectors from files like the ones 
 # generated from a mallet model by the program
 # edu.isi.bmkeg.skm.topicmodeling.bin.DumpTopicVectors
@@ -207,7 +210,7 @@ meanTopicProp <- function(tv) {
 }
 
 # Counts how many edges weighting more than a threshold a pairwise 
-# document similarities graph would have.
+# document similarities graph would have (cosine similarities).
 # Arguments:
 #    tv: document topic vectors matrix
 #    threshold: similarity score cutoff threshold. Only
@@ -222,7 +225,7 @@ countEdges <- function(tv, threshold = 0.1) {
     	for (j in (i + 1):nrow(tv)) {
     		
     		c <- myCosine(tv[i,], tv[j,])
-			
+    	  
 			if (c >= threshold) {
 			
 				cnt <- cnt + 1	
@@ -238,18 +241,18 @@ countEdges <- function(tv, threshold = 0.1) {
 
  }	
 
-# Computes pairwise document similarities
+# Computes pairwise document similarities (cosine)
 # Arguments:
 #    tv: document topic vectors matrix
 #    threshold: similarity score cutoff threshold. Only
 #       edges over this value will be included in the result.
 #
 # Value: a weighted undirected igraph whose vertices correspond to
-#       documents and whose edges weight are the similarity scores.
+#       documents and whose edges weight are the Cosine similarity scores.
 #
 docSimilarities <- function(tv, threshold = 0.1, quadSize = 5000L) {
 	
-	require("igraph")
+  require("igraph")
 
 	cat(date(), ': Computing cosine distances \n')
 
@@ -273,6 +276,208 @@ docSimilarities <- function(tv, threshold = 0.1, quadSize = 5000L) {
 	
 }
 
+# Computes pairwise document similarities (Kullback-Leibler distance)
+# Arguments:
+#    tv: document topic vectors matrix
+#    threshold: similarity score cutoff threshold. Only
+#       edges over this value will be included in the result.
+#
+# Value: a weighted undirected igraph whose vertices correspond to
+#       documents and whose edges weight are the similarity scores.
+#
+docSimilaritiesKl <- function(tv, eps = 10^-4, threshold = 0.1, quadSize = 5000L) {
+  
+  require("igraph")
+  
+  cat(date(), ': Computing cosine distances \n')
+  
+  e <- findEdgesKl(tv, eps, quadSize = as.integer(quadSize), threshold = threshold)
+  
+  cat(date(), ': Constructing similarity graph \n')
+  
+  g <- graph.empty(directed=FALSE) + vertices(rownames(tv))
+  
+  g <- g + edges(as.vector(rbind(e$source,e$target)),weight=e$weight)
+  
+  cnt <- length(e$source)
+  
+  total <- (nrow(tv) * (nrow(tv) -1)) / 2
+  cat(sprintf("%d out of %d edges included (%.2f percentile) \n",cnt,total, 1 - cnt/total))
+  cat(sprintf("%d components \n",no.clusters(g)))
+  
+  cat(date(), '\n')
+  
+  return(g)
+  
+}
+
+# Computes a symetric KL similarity between two probability distributions.
+KLsim2 <- function (x,y,logx=log(x),logy=log(y),  eps = 10^-4) {
+
+  ok <- (x > eps) & (y > eps)
+  if (any(ok)) {
+    kl1 <-  sum(x * (logx - logy))
+    kl2 <-  sum(y * (logy - logx))
+    return(0 - (kl1 + kl2)/2)    
+  } else {
+    return(0)
+  }
+}
+
+# Computes a symetric KL similarity between two probability distributions.
+KLsim3 <- function (x,y,logx=log(x),logy=log(y),  eps = 10^-4) {
+  
+  ok <- (x > eps) & (y > eps)
+  if (any(ok)) {
+    kl1 <-  sum(x * (logx - logy))
+    kl2 <-  sum(y * (logy - logx))
+    return(2/(kl1 + kl2))    
+  } else {
+    return(0)
+  }
+}
+
+myKLsimM <- function(tv, tvlogs = log(tv),  eps = 10^-4, sourceFrom = 1L, targetFrom = 1L, max = 5000) {
+  
+  sourceTo <- min(sourceFrom + max - 1, nrow(tv))
+  targetTo <- min(targetFrom + max - 1, nrow(tv))
+  
+  x <- tv[sourceFrom:sourceTo,]
+  xlogs <- tvlogs[sourceFrom:sourceTo,]
+  
+  if (sourceFrom == sourceTo) {
+    x <- rbind(x)
+    xlogs <- rbind(xlogs)
+  }
+  
+  y <- tv[targetFrom:targetTo,]
+  ylogs <- tvlogs[targetFrom:targetTo,]
+  
+  if (targetFrom == targetTo) {
+    y <- rbind(y)
+    ylogs <- rbind(ylogs)
+  }
+  
+  xlogy <- tcrossprod(x, ylogs)
+  xlogx <- rowSums(x * xlogs)
+  negKlxy <- sweep(xlogy,MARGIN=1,STATS=xlogx)
+    
+  ylogx <- tcrossprod(y, xlogs)
+  ylogy <- rowSums(y * ylogs)
+  negKlyx <- sweep(ylogx,MARGIN=1,STATS=ylogy)
+  
+  return((negKlxy + t(negKlyx))/2)  
+}
+
+myKLsimM4 <- function(tv, tvlogs = log(tv),  eps = 10^-4, sourceFrom = 1L, targetFrom = 1L, max = 5000) {
+  
+  sourceTo <- min(sourceFrom + max - 1, nrow(tv))
+  targetTo <- min(targetFrom + max - 1, nrow(tv))
+  
+  x <- tv[sourceFrom:sourceTo,]
+  xlogs <- tvlogs[sourceFrom:sourceTo,]
+  
+  if (sourceFrom == sourceTo) {
+    x <- rbind(x)
+    xlogs <- rbind(xlogs)
+  }
+  
+  y <- tv[targetFrom:targetTo,]
+  ylogs <- tvlogs[targetFrom:targetTo,]
+  
+  if (targetFrom == targetTo) {
+    y <- rbind(y)
+    ylogs <- rbind(ylogs)
+  }
+  
+  xlogy <- tcrossprod(x, ylogs)
+  xlogx <- rowSums(x * xlogs)
+  negKlxy <- sweep(xlogy,MARGIN=1,STATS=xlogx)
+  
+  ylogx <- tcrossprod(y, xlogs)
+  ylogy <- rowSums(y * ylogs)
+  negKlyx <- sweep(ylogx,MARGIN=1,STATS=ylogy)
+  
+  return(((negKlxy + t(negKlyx)) ^-1)* (-2))
+}
+
+myKLsimM2 <- function(tv, tvlogs=log(tv),  eps = 10^-4, sourceFrom = 1L, targetFrom = 1L, max = 5000) {
+  
+  sourceTo <- min(sourceFrom + max - 1, nrow(tv))
+  targetTo <- min(targetFrom + max - 1, nrow(tv))
+  
+  # Computes KL distances between given tv rows
+  
+  sapply(X=targetFrom:targetTo,
+        FUN=function(i){
+          sapply(X=sourceFrom:sourceTo,
+                FUN=function(j){KLsim2(x=tv[i,],y=tv[j,],logx=tvlogs[i,],logy=tvlogs[j,],eps=eps)})
+        })
+  
+}
+
+myKLsimM3 <- function(tv, tvlogs=log(tv),  eps = 10^-4, sourceFrom = 1L, targetFrom = 1L, max = 5000) {
+  
+  sourceTo <- min(sourceFrom + max - 1, nrow(tv))
+  targetTo <- min(targetFrom + max - 1, nrow(tv))
+  
+  # Computes KL distances between given tv rows
+  
+  sapply(X=targetFrom:targetTo,
+         FUN=function(i){
+           sapply(X=sourceFrom:sourceTo,
+                  FUN=function(j){KLsim3(x=tv[i,],y=tv[j,],logx=tvlogs[i,],logy=tvlogs[j,],eps=eps)})
+         })
+  
+}
+
+findQuadEdgesKl <- function(tv, tvlogs = log(tv),  eps = 10^-4, sourceFrom = 1L, targetFrom = 1L, max = 5000L, threshold = 0.1) {
+  
+  cat(sprintf("Computing Quadrant (sourceFrom, targetFrom, max): %d %d %d \n", sourceFrom, targetFrom,max))
+  
+  # Computes cosine distances of given tv rows
+  # 	tvcos <- myCosineM(tv, sourceFrom = sourceFrom, targetFrom = targetFrom, max = max)
+  tvcos <- myKLsimM3(tv, tvlogs, eps, sourceFrom = sourceFrom, targetFrom = targetFrom, max = max)
+  
+  # Extracts indices and values for distances grater or equal than threshold
+  thrIdx <- which(tvcos >= threshold)
+  re <- row(tvcos)[thrIdx] + sourceFrom - 1L
+  ce <- col(tvcos)[thrIdx] + targetFrom - 1L
+  we <- tvcos[thrIdx]
+  
+  # Because edges are undirected we want only edges corresponding
+  # to the upper triangle of the distance matrix
+  lowerIndx <- which(re > ce)
+  return(list(source=re[lowerIndx], target=ce[lowerIndx], weights=we[lowerIndx]))
+}
+
+findEdgesKl <- function(tv, eps = 10^-4, quadSize = 5000L, threshold = 0.1) {
+  
+  w <- tv < eps
+  if (any(w)) 
+    tv[w] <- eps
+  tv <- sweep(tv, 1, rowSums(tv), "/")
+  
+  tvlogs <- log(tv)
+  
+  quadSize <- as.integer(quadSize)
+  re <- lapply(seq(from=1L,to=nrow(tv),by=quadSize), 
+               FUN=function(i) {
+                 ce <- lapply(seq(from=1L, to=i, by=quadSize),
+                              FUN=function(j) {
+                                findQuadEdgesKl(tv,tvlogs,sourceFrom=i, targetFrom=j, max=quadSize, threshold = threshold)
+                              })
+                 cat('Combining edges column ....')
+                 ces<-combineEdges(ce)
+                 cat('Done. \n')
+                 return(ces)
+               })
+  cat('Combining edges row ....')  
+  res <- combineEdges(re)
+  cat('Done. \n')
+  return(res)
+}
+
 findEdges <- function(tv, quadSize = 5000L, threshold = 0.1) {
 	quadSize <- as.integer(quadSize)
 	re <- lapply(seq(from=1L,to=nrow(tv),by=quadSize), 
@@ -291,6 +496,7 @@ findEdges <- function(tv, quadSize = 5000L, threshold = 0.1) {
 	cat('Done. \n')
 	return(res)
 }
+
 
 findQuadEdges <- function(tv, sourceFrom = 1L, targetFrom = 1L, max = 5000L, threshold = 0.1) {
 	
@@ -316,7 +522,7 @@ myCosineM <- function(tv, sourceFrom = 1L, targetFrom = 1L, max = 5000) {
 	sourceTo <- min(sourceFrom + max - 1, nrow(tv))
 	targetTo <- min(targetFrom + max - 1, nrow(tv))
 	
-	# Computes cosine distances of given tv rows
+	# Computes cosine distances between given tv rows
 	tvxy <- tcrossprod(tv[sourceFrom:sourceTo,], tv[targetFrom:targetTo,])
 	tvxx <- sqrProd(tv[sourceFrom:sourceTo,])
 	tvyy <- sqrProd(tv[targetFrom:targetTo,])
@@ -324,6 +530,14 @@ myCosineM <- function(tv, sourceFrom = 1L, targetFrom = 1L, max = 5000) {
 	tvyym <- matrix(rep(x=tvyy,times=nrow(tvxy)),nrow=nrow(tvxy), byrow=TRUE)
 		
 	return(tvxy / sqrt(tvxxm * tvyym))
+}
+
+# Computes a symetric KL similarity from a KL Divergence
+KLsim <- function (m, ...) {
+  if (ncol(m) != 2) stop("m has to be a matrix with two columns, one per distribution")
+  
+  kds <- KLdiv(m,...)
+  return(0 - (kds[1,2] + kds[2,1])/2)
 }
 
 combineEdges <- function(x) {
@@ -337,6 +551,7 @@ combineEdges <- function(x) {
 myCosine <- function(x,y) {
 	return(x %*% y / sqrt(x%*%x * y%*%y))
 }
+
 
 # Given a matrix X(n,m) with Xi i=1..n vectors as rows,
 # it computes a vector of crossprod(Xi,Xi) i=1..n
