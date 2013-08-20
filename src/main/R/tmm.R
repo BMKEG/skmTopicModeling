@@ -201,7 +201,7 @@ plotTMM <- function (l, tv, cntClusters, ... ) {
 	
 	cat(date(), ': End.')	
 	
-	return(cl)
+	return(list(cl = cl, clt = clt))
 }
 
 # Computes mean proportions for each topic in the corpus
@@ -398,6 +398,7 @@ findEdgesKl <- function(tv, eps = 10^-4, quadSize = 5000L, threshold = 0.1) {
     tv[w] <- eps
   tv <- sweep(tv, 1, rowSums(tv), "/")
   
+  rm(w)
   tvlogs <- log(tv)
   
   quadSize <- as.integer(quadSize)
