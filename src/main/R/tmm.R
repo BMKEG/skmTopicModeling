@@ -51,6 +51,30 @@ write.closestNodes <- function(c2c, file) {
   write.table(t,file,quote=FALSE,sep='\t',row.name=FALSE,col.name=TRUE)
 }
 
+write.closestNodesWithTopics <- function(l,cl,tv,ndocs,ntopics,file) {
+  
+  # vector with documents closest ti the cluster centers, sorted by distance and cluster
+  c2c <- as.vector(t(closestToCenter(n=ndocs,l=l,cl=cl)))
+
+  # Top Topics for the documents in c2c
+  tdt <- topDocTopics(tv=tv[c2c,],n=ntopics)
+  
+  f <- file(description=file,open="w")
+  cat("vpdmfid\tcluster\t(topic, prop) ...\n",file=f)
+  
+  for (i in 1:length(c2c)) {
+    docid <- c2c[i]
+    cat(docid,'\t',cl$cluster[docid],file=f)
+
+    topics <- tdt[[i]][[1]]
+    for (j in 1:length(topics)) {
+      cat('\t',names(topics)[j],'\t',topics[j],file=f)
+    }
+    cat('\n',file=f)
+  }
+  close(f)
+}
+
 # MAIN FUNCTION
 # Arguments:
 #   similarityGraphFile: a pairwise document similarity graphml file
@@ -176,10 +200,24 @@ closestToCenter <- function(n, l, cl) {
   d2c <- distToCenter(l,cl)
   
   docs <- sapply(1:nrow(cl$centers), 
-                function(k) {
-                  names(sort(d2c[which(cl$cluster == k)])[1:n])
-                })
+                 function(k) {
+                   names(sort(d2c[which(cl$cluster == k)])[1:n])
+                 })
   return(t(docs))
+}
+
+# Arguments:
+#  tv: matrix with document/topic proportions (one document per row, one topic per column)
+#  n: number of proportions per document to return
+#
+# Value: a named document list of named list of proportions. Each element of the outer list is named with a document name,
+#   and each element in the inner list is named with the topic number.
+topDocTopics <- function(tv,n) {
+  apply(tv,MARGIN=1,
+        function(x){
+          top <- sort(x,decreasing=TRUE)[1:n]
+          list(top)
+        })
 }
 
 plotTMM <- function (l, tv, cntClusters, ... ) {
