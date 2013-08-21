@@ -26,7 +26,8 @@ import edu.isi.bmkeg.vpdmf.dao.CoreDao;
 import edu.isi.bmkeg.vpdmf.dao.CoreDaoImpl;
 import edu.isi.bmkeg.vpdmf.exceptions.VPDMfException;
 /**
- * Makes a report of DrL clusters information including cluster topics words and 
+ * Makes a report of DrL clusters information including cluster topics words,
+ * top topics per documents, and 
  * citation information of selected documents per cluster.
  * 
  * It is based on data computed by a related R module.
@@ -36,20 +37,20 @@ import edu.isi.bmkeg.vpdmf.exceptions.VPDMfException;
  * clusterTopicsFile: Computed by our R function "write.diagTopics()"
  * Format: cluster diagTopic words (separated by \t).
  *  
- * clusterDocsFile: Computed by our R function "write.closestNodes()"
- * Format: cluster docs1 docs2 .. docn (separated by \t).
+ * clusterDocsFile: Computed by our R function "write.closestNodesWithTopics()"
+ * Format: docid, cluster, topici, propi ... (separated by \t).
  *  
  * @author tallis
  *
  */
-public class ReportDrLClustersInfo {
+public class ReportDrLClustersWTopicsInfo {
 
 	public static class Options extends Options_ImplBase {
 		@Option(name = "-clusterTopics", usage = "File containing cluster topic words (one topic per cluster)", required = true, 
 				metaVar = "FILE" )
 		public File clusterTopicsFile = null;
 
-		@Option(name = "-clusterDocs", usage = "File containing the vpdmfIds of selected documents per cluster", required = true, 
+		@Option(name = "-clusterDocs", usage = "File containing the vpdmfIds of selected documents per cluster + top topics", required = true, 
 				metaVar = "FILE" )
 		public File clusterDocsFile = null;
 
@@ -81,6 +82,26 @@ public class ReportDrLClustersInfo {
 		}
 	}
 	
+	public static class DocInfo {
+		public long VpdmfId;
+		public TopicProportion[] topicProps;
+		
+		public DocInfo(long vpdmfId, TopicProportion[] topicProps) {
+			this.VpdmfId = vpdmfId;
+			this.topicProps = topicProps;
+		}
+	}
+	
+	public static class TopicProportion {
+		public int topic;
+		public double prop;
+		
+		public TopicProportion(int topic, double prop) {
+			this.topic = topic;
+			this.prop = prop;
+		}
+	}
+	
 	public static void execute(File clusterTopicsFile,
 			File clusterDocsFile,
 			File reportFile,
@@ -90,7 +111,7 @@ public class ReportDrLClustersInfo {
 			String dbName) throws Exception {
 		
 		List<ClusterTopic> clts = readClusterTopics(clusterTopicsFile);
-		List<long[]> clDocs = readClusterDocs(clusterDocsFile);
+		List<? extends List<DocInfo>> clDocs = readClusterDocs(clusterDocsFile);
 		
 		if (clDocs.size() != clts.size()) {
 			throw new IllegalArgumentException(
@@ -111,11 +132,11 @@ public class ReportDrLClustersInfo {
 		String docLineFormat, docLineHeadings;
 		
 		if (wiki) {
-			docLineHeadings = "|| vpdmfId || pmid || vpdmfLabel ||url ||";
-			docLineFormat = "| %d | %d | %s | [http://www.ncbi.nlm.nih.gov/pubmed/?term=%s%%5Buid%%5D] |\n";
+			docLineHeadings = "|| vpdmfId || pmid || vpdmfLabel ||top topics ||";
+			docLineFormat = "| %d | [%d|http://www.ncbi.nlm.nih.gov/pubmed/?term=%s%%5Buid%%5D] | %s | %s |\n";
 		} else {
-			docLineHeadings = "vpdmfId\tpmid\tvpdmfLabel\turl";
-			docLineFormat = "%d\t%d\t%s\thttp://www.ncbi.nlm.nih.gov/pubmed/?term=%s%%5Buid%%5D\n";
+			docLineHeadings = "vpdmfId\tpmid\tvpdmfLabel\ttop topics";
+			docLineFormat = "%d\t%d [http://www.ncbi.nlm.nih.gov/pubmed/?term=%s%%5Buid%%5D]\t%s\t%s\n";
 		}
 
 		for (int i = 0; i < clts.size(); i++) {
@@ -128,18 +149,26 @@ public class ReportDrLClustersInfo {
 			
 			pWriter.println(docLineHeadings);
 			
-			long[] ids = clDocs.get(i);
-			for (int j = 0; j < ids.length; j++) {
+			List<DocInfo> dis = clDocs.get(i);
+			for (DocInfo di : dis) {
 			
-				long vpdmfId = ids[j];
+				long vpdmfId = di.VpdmfId;
 				ArticleCitation ac = de.getCitDao().findArticleByVpdmfId(vpdmfId);
 				
 				if (ac == null) {
 					System.err.println("Failed to find vpdmfId: " + vpdmfId);
 				} else {
 					int pmid = ac.getPmid();
-					String label = ac.getVpdmfLabel();
-					pWriter.format(docLineFormat, vpdmfId, pmid, label, pmid);
+					String label = escapeSpecialCharacters(ac.getVpdmfLabel());
+					StringBuffer sb = new StringBuffer();
+					for (TopicProportion tp : di.topicProps) {
+						if (tp.topic == clt.topic)
+							sb.append("*" + tp.topic + "*");
+						else
+							sb.append(tp.topic);
+						sb.append(String.format(": %.3f ", tp.prop));
+					}
+					pWriter.format(docLineFormat, vpdmfId, pmid, pmid, label, sb.toString());
 				}
 			}
 			
@@ -151,43 +180,55 @@ public class ReportDrLClustersInfo {
 
 	}
 
-	private static List<long[]> readClusterDocs(File clusterDocsFile) throws Exception {
+	private static String escapeSpecialCharacters(String vpdmfLabel) {
+		return vpdmfLabel.replaceAll("\\[","\\\\[").replaceAll("]", "\\\\]");
+	}
 
-		ArrayList<long[]> clDocs= new ArrayList<long[]>();
+	private static List<? extends List<DocInfo>> readClusterDocs(File clusterDocsFile) throws Exception {
+
+		ArrayList<ArrayList<DocInfo>> clDocs= new ArrayList<ArrayList<DocInfo>>();
 		
 		BufferedReader reader =  new BufferedReader(new FileReader(clusterDocsFile));
 		
 		try {
 
-			String heading = reader.readLine(); 
-			
-			int docsCnt = heading.split("\t").length - 1;
+			reader.readLine(); // Skips heading 
 			
 			String line = reader.readLine();
 			int l = 1;
+			
+			int currClId = -1;
+			ArrayList<DocInfo> cl = null;
+			
 			while (line != null) {
+				
 				l++;
 				String[] fields = line.split("\t");
-				if (fields.length < docsCnt + 1) {
-					throw new Exception("Not enough fields in file " + clusterDocsFile.getAbsolutePath() + " at line " + l);
-				}
-
-				int cl;
-				long[] ids = new long[docsCnt];
+				
 				try {
-					cl = Integer.parseInt(fields[0]);
-					for (int j = 0; j < docsCnt; j++) {
-						ids[j] = Long.parseLong(fields[j + 1]);						
+					long vpdmfId = Long.parseLong(fields[0].trim());
+					int clId = Integer.parseInt(fields[1].trim());
+					
+					int cntTopics = (fields.length - 2) / 2;
+					TopicProportion[] tprops = new TopicProportion[cntTopics];
+					for (int i = 0; i < cntTopics; i++) {
+						tprops[i] = new TopicProportion(Integer.parseInt(fields[i*2 + 2].trim()),
+											Double.parseDouble(fields[i*2 + 3].trim()));
 					}
+		
+					DocInfo docInfo = new DocInfo(vpdmfId, tprops);
+					
+					if (currClId != clId) {
+						cl = new ArrayList<DocInfo>();
+						clDocs.add(cl);
+						currClId = clId;
+					}
+					
+					cl.add(docInfo);
+
 				} catch (NumberFormatException e) {
-					throw new Exception("Failed to parse Cluster or Doc Id in file " + clusterDocsFile.getAbsolutePath() + " at line " + l);
+					throw new Exception("Failed to parse numeric field in file " + clusterDocsFile.getAbsolutePath() + " at line " + l,e);
 				}
-				
-				if (cl != l - 1) {
-					throw new Exception("Unexpected cluster number in file " + clusterDocsFile.getAbsolutePath() + " at line " + l);
-				}
-				
-				clDocs.add(ids);
 
 				line = reader.readLine();
 				
