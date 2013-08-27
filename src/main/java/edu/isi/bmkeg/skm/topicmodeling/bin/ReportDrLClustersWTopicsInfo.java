@@ -188,6 +188,8 @@ public class ReportDrLClustersWTopicsInfo {
 
 		ArrayList<ArrayList<DocInfo>> clDocs= new ArrayList<ArrayList<DocInfo>>();
 		
+		System.out.println("File: " + clusterDocsFile.getAbsolutePath());
+		
 		BufferedReader reader =  new BufferedReader(new FileReader(clusterDocsFile));
 		
 		try {
