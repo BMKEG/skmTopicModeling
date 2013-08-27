@@ -75,6 +75,30 @@ write.closestNodesWithTopics <- function(l,cl,tv,ndocs,ntopics,file) {
   close(f)
 }
 
+write.clustersTopTopics <- function(cl,tv,ntopics,file) {
+  
+  # Mean topic vector per cluster
+  clTv <- t(sapply(1:nrow(cl$centers), function(y,tv,cl) {colMeans(tv[which(cl$cluster == y),])},tv,cl))
+
+  # Top Topics per cluster
+  clTopTopics <- topDocTopics(clTv, ntopics)
+
+  f <- file(description=file,open="w")
+
+  cat("cluster\t(topic, prop) ...\n",file=f)
+  
+  for (i in 1:length(clTopTopics)) {
+    cat(i,'\t',file=f)
+    
+    topics <- clTopTopics[[i]][[1]]
+    for (j in 1:length(topics)) {
+      cat('\t',names(topics)[j],'\t',topics[j],file=f)
+    }
+    cat('\n',file=f)
+  }
+  close(f)
+}
+
 # MAIN FUNCTION
 # Arguments:
 #   similarityGraphFile: a pairwise document similarity graphml file
@@ -220,10 +244,10 @@ topDocTopics <- function(tv,n) {
         })
 }
 
-plotTMM <- function (l, tv, cntClusters, ... ) {
+plotTMM <- function (l, tv, cntClusters, nstart = 1, iter.max  =10, ... ) {
 	
 	cat(date(), ': computing clusters in the documents DrL layout ... \n')
-	cl <- kmeans(l, centers = cntClusters, nstart = 10)
+	cl <- kmeans(l, centers = cntClusters, nstart = nstart, iter.max = iter.max)
 	
 	cat(date(), ': computing mean topic vectors per cluster ...\n')
 	clTv <- t(sapply(1:nrow(cl$centers), function(y,tv,cl) {colMeans(tv[which(cl$cluster == y),])},tv,cl))
